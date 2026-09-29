@@ -1,0 +1,109 @@
+@page "/{handle:handle}"
+@model Stamp.Web.Pages.Profile.PublicModel
+@{
+    var profile = Model.Profile;
+    ViewData["Title"] = profile.DisplayName;
+    var price = Money.Format(profile.StampPriceCents, profile.Currency);
+    var window = TimeText.Duration(profile.ReplyWindow);
+    var firstName = profile.DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? profile.DisplayName;
+}
+
+<section class="profile">
+  <div class="profile__card">
+    @if (profile.PhotoUrl is not null)
+    {
+      <img class="avatar" src="@profile.PhotoUrl" alt="" width="96" height="96" referrerpolicy="no-referrer" />
+    }
+    else
+    {
+      <div class="avatar avatar--initials" aria-hidden="true">@Model.Initials</div>
+    }
+    <h1 class="profile__name">@profile.DisplayName</h1>
+    <p class="profile__handle">@@@profile.Handle</p>
+    @if (!string.IsNullOrWhiteSpace(profile.Bio))
+    {
+      <p class="profile__bio">@profile.Bio</p>
+    }
+
+    <div class="price-stamp" aria-label="@price per message">
+      <span class="price-stamp__amount">@price</span>
+      <span class="price-stamp__label">per message</span>
+    </div>
+
+    <p class="rule">You're only charged if @firstName replies within @window. Otherwise the hold on your card is released and you pay nothing.</p>
+  </div>
+
+  @if (!profile.IsAcceptingStamps)
+  {
+    <div class="card center">
+      <h2>Not accepting stamps yet</h2>
+      <p class="muted">@profile.DisplayName hasn't finished setting up this page. Check back soon.</p>
+    </div>
+  }
+  else
+  {
+    <form id="stamp-form" class="card form" novalidate
+          data-endpoint="/@profile.Handle/stamp"
+          data-provider="@Model.PaymentProvider"
+          data-publishable-key="@Model.PublishableKey"
+          data-amount="@profile.StampPriceCents"
+          data-currency="@profile.Currency">
+      @Html.AntiForgeryToken()
+      <h2>Write to @firstName</h2>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="senderName">Your name</label>
+          <input id="senderName" name="senderName" maxlength="@StampedMessage.MaxSenderNameLength" autocomplete="name" required />
+          <span class="field__error" data-error-for="senderName"></span>
+        </div>
+        <div class="field">
+          <label for="senderEmail">Your email</label>
+          <input id="senderEmail" name="senderEmail" type="email" maxlength="@EmailAddress.MaxLength" autocomplete="email" required />
+          <span class="field__error" data-error-for="senderEmail"></span>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="subject">Subject</label>
+        <input id="subject" name="subject" maxlength="@StampedMessage.MaxSubjectLength" required />
+        <span class="field__error" data-error-for="subject"></span>
+      </div>
+
+      <div class="field">
+        <label for="body">Message</label>
+        <textarea id="body" name="body" rows="7" maxlength="@StampedMessage.MaxBodyLength" required data-counter></textarea>
+        <span class="field__hint" data-counter-for="body"></span>
+        <span class="field__error" data-error-for="body"></span>
+      </div>
+
+      <div class="field">
+        <span class="label">Card</span>
+        @if (Model.UsesStripe)
+        {
+          <div id="payment-element" class="payment-element"><p class="muted">Loading secure card form…</p></div>
+        }
+        else
+        {
+          <p class="notice notice--dev">Development mode: no card needed. Sending simulates a successful card authorization.</p>
+        }
+      </div>
+
+      <div class="form__errors" id="stamp-error" role="alert" hidden></div>
+
+      <button type="submit" class="button button--block" data-idle-label="Send with a @price stamp">Send with a @price stamp</button>
+      <p class="fine-print">@price is held on your card, not charged. It's charged only if @firstName replies within @window, and we'll email you either way.</p>
+    </form>
+  }
+</section>
+
+@section Scripts {
+  @if (profile.IsAcceptingStamps)
+  {
+    @if (Model.UsesStripe)
+    {
+      <script src="https://js.stripe.com/v3/"></script>
+    }
+    <script src="~/js/send-stamp.js" asp-append-version="true"></script>
+  }
+}

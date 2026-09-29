@@ -2,18 +2,47 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>@(ViewData["Title"] is string title ? $"{title} · Stamp" : "Stamp")</title>
+  <link rel="icon" href="~/favicon.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
   @await RenderSectionAsync("Head", required: false)
 </head>
 <body>
   <header class="site-header">
-    <a class="brand" href="/">Stamp</a>
+    <div class="site-header__inner">
+      <a class="brand" href="/"><span class="brand__mark" aria-hidden="true"></span>Stamp</a>
+      <nav class="nav" aria-label="Main">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+          <a asp-page="/Inbox/Index">Inbox</a>
+          <a asp-page="/Settings/Index">Settings</a>
+          <a asp-page="/Payouts/Index">Payouts</a>
+          <form method="post" asp-page="/Auth/Logout" class="nav__form">
+            <button type="submit" class="link-button">Sign out</button>
+          </form>
+        }
+        else
+        {
+          <a asp-page="/Auth/Login" class="button button--small">Sign in</a>
+        }
+      </nav>
+    </div>
   </header>
+
   <main class="container">
+    @if (TempData["Flash"] is string flash)
+    {
+      <div class="flash" role="status">@flash</div>
+    }
     @RenderBody()
   </main>
+
+  <footer class="site-footer">
+    <p>Stamp: a paid inbox where senders are only charged if you reply.</p>
+  </footer>
+
+  <script src="~/js/site.js" asp-append-version="true"></script>
   @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

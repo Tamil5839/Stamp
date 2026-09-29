@@ -85,7 +85,7 @@ public sealed class FileEmailSenderTests
                 TestContext.Current.CancellationToken);
 
             var file = Assert.Single(Directory.GetFiles(Path.Combine(root.FullName, ".emails")));
-            Assert.EndsWith("20261001-120000-kalai-example-com-01234567.html", file);
+            Assert.EndsWith("20261001-120000-kalai-example-com-456789abcdef.html", file);
             var html = await File.ReadAllTextAsync(file, TestContext.Current.CancellationToken);
             Assert.Contains("Subject: Your Stamp sign-in link", html);
             Assert.Contains("<p>Sign in</p>", html);

@@ -1,0 +1,52 @@
+@page "/{handle:handle}/sent"
+@model Stamp.Web.Pages.Profile.SentModel
+@{
+    var stamp = Model.Stamp;
+    ViewData["Title"] = "Message sent";
+    var price = Money.Format(stamp.AmountCents, stamp.Currency);
+}
+
+@section Head {
+  @if (Model.ShouldRefresh)
+  {
+    <meta http-equiv="refresh" content="3;url=@Model.RefreshUrl" />
+  }
+}
+
+<div class="card card--narrow confirmation">
+  @switch (stamp.Status)
+  {
+    case MessageStatus.Pending:
+      <div class="confirmation__mark" aria-hidden="true"></div>
+      <h1>Stamped and delivered</h1>
+      <p>@stamp.ReceiverDisplayName has until <strong>@TimeText.Moment(stamp.ExpiresAt!.Value)</strong> to reply. Their reply will come to your inbox.</p>
+      <p class="muted">@price is on hold on your card. You're only charged if they reply in time; otherwise the hold is released.</p>
+      <p class="muted">We've emailed you a confirmation.</p>
+      break;
+
+    case MessageStatus.AwaitingPayment when Model.PaymentFailed:
+      <h1>Your card wasn't authorized</h1>
+      <p>Nothing was charged. <a href="/@stamp.ReceiverHandle">Go back and try another card</a>.</p>
+      break;
+
+    case MessageStatus.AwaitingPayment when Model.ShouldRefresh:
+      <h1>Confirming your payment…</h1>
+      <p class="muted">This usually takes a few seconds. This page refreshes on its own.</p>
+      break;
+
+    case MessageStatus.AwaitingPayment:
+      <h1>We haven't received your card authorization</h1>
+      <p>If you completed the card step, you'll get a confirmation email shortly. Otherwise nothing was charged, and you can <a href="/@stamp.ReceiverHandle">try again</a>.</p>
+      break;
+
+    case MessageStatus.Replied:
+      <h1>@stamp.ReceiverDisplayName already replied</h1>
+      <p>Check your email for their reply.</p>
+      break;
+
+    default:
+      <h1>This message is closed</h1>
+      <p class="muted">It was declined or expired, and you weren't charged.</p>
+      break;
+  }
+</div>

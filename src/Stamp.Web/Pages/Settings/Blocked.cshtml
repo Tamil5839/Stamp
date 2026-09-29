@@ -1,0 +1,40 @@
+@page
+@model Stamp.Web.Pages.Settings.BlockedModel
+@{
+    ViewData["Title"] = "Blocked senders";
+}
+
+<div class="page-header">
+  <a asp-page="/Settings/Index" class="back-link">← Settings</a>
+  <h1>Blocked senders</h1>
+  <p class="muted">People on this list can't send you stamps. They aren't told they're blocked beyond seeing that you're not accepting their messages.</p>
+</div>
+
+<form method="post" asp-page-handler="Add" class="card form form--inline">
+  <div class="field">
+    <label asp-for="Email">Block an email address</label>
+    <input asp-for="Email" type="email" placeholder="someone@example.com" required />
+    <span asp-validation-for="Email" class="field__error"></span>
+  </div>
+  <button type="submit" class="button">Block</button>
+</form>
+
+@if (Model.Blocked.Count == 0)
+{
+  <p class="empty">You haven't blocked anyone.</p>
+}
+else
+{
+  <ul class="list card">
+    @foreach (var entry in Model.Blocked)
+    {
+      <li class="list__item">
+        <span>@entry.Email</span>
+        <form method="post" asp-page-handler="Remove">
+          <input type="hidden" name="remove" value="@entry.Email" />
+          <button type="submit" class="button button--ghost button--small">Unblock</button>
+        </form>
+      </li>
+    }
+  </ul>
+}

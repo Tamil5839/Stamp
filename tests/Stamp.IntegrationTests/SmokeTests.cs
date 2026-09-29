@@ -1,18 +1,19 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
+using Stamp.IntegrationTests.Web;
 
 namespace Stamp.IntegrationTests;
 
-public sealed class SmokeTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public sealed class SmokeTests(StampWebFactory factory) : IClassFixture<StampWebFactory>
 {
-    [Fact]
-    public async Task Home_page_renders()
+    [Theory]
+    [InlineData("/")]
+    [InlineData("/auth/login")]
+    public async Task Public_pages_render(string path)
     {
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/", TestContext.Current.CancellationToken);
+        var response = await factory.Browser().GetAsync(path, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("Stamp", await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("nosniff", response.Headers.GetValues("X-Content-Type-Options").Single());
     }
 }

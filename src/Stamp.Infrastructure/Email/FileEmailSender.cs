@@ -27,7 +27,9 @@ public sealed partial class FileEmailSender(
         System.IO.Directory.CreateDirectory(Directory);
 
         var recipient = UnsafeFileNameChars().Replace(message.To.ToLowerInvariant(), "-").Trim('-');
-        var key = idempotencyKey.Length > 8 ? idempotencyKey[..8] : idempotencyKey;
+        // Outbox ids are time-ordered GUIDs: their leading characters are a timestamp, so the tail
+        // is what tells two emails from the same second apart.
+        var key = idempotencyKey.Length > 12 ? idempotencyKey[^12..] : idempotencyKey;
         var path = Path.Combine(Directory, $"{time.GetUtcNow():yyyyMMdd-HHmmss}-{recipient}-{key}.html");
 
         var document = $"""

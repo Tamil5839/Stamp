@@ -1,0 +1,30 @@
+@page
+@model Stamp.Web.Pages.Payouts.IndexModel
+@{
+    ViewData["Title"] = "Payouts";
+}
+
+<div class="page-header">
+  <h1>Payouts</h1>
+  <p class="muted">Stamp uses Stripe to hold each sender's payment and pay you when you reply.</p>
+</div>
+
+<div class="card">
+  @if (Model.Current.PayoutsEnabled)
+  {
+    <p class="status status--ok">Payouts are set up</p>
+    <p>When you reply to a stamp, Stripe transfers the price minus Stamp's @Model.FeePercent% fee to your connected account and pays it out to your bank.</p>
+    @if (Model.Current.Handle is null)
+    {
+      <p>Next, <a asp-page="/Settings/Index">pick a handle and price</a> to publish your page.</p>
+    }
+  }
+  else
+  {
+    <p class="status status--pending">@(Model.Current.PayoutAccountConnected ? "Stripe setup isn't finished yet" : "Not set up yet")</p>
+    <p>Your page accepts stamps once you've connected a Stripe Express account. It takes a few minutes, and Stripe asks for your identity and bank details.</p>
+    <form method="post" asp-page-handler="Start">
+      <button type="submit" class="button">@(Model.Current.PayoutAccountConnected ? "Continue Stripe setup" : "Set up payouts with Stripe")</button>
+    </form>
+  }
+</div>

@@ -1,0 +1,24 @@
+@page
+@model Stamp.Web.Pages.Auth.VerifyModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<div class="card card--narrow">
+  @if (Model.Usable)
+  {
+    <h1>Finish signing in</h1>
+    <p>Click continue to sign in to Stamp.</p>
+    <form method="post" class="form">
+      <input type="hidden" asp-for="Token" />
+      <button type="submit" class="button button--block">Continue</button>
+    </form>
+    <p class="fine-print">This extra click stops email security scanners, which open links automatically, from using up your one-time link.</p>
+  }
+  else
+  {
+    <h1>This link has expired</h1>
+    <p>Sign-in links work once and expire after a few minutes.</p>
+    <a class="button" asp-page="/Auth/Login">Get a new link</a>
+  }
+</div>

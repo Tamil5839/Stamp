@@ -1,9 +1,43 @@
 @page
+@inject Microsoft.Extensions.Options.IOptions<StampOptions> StampSettings
 @{
     ViewData["Title"] = "A paid inbox for busy people";
+    var window = TimeText.Duration(StampSettings.Value.ReplyWindow);
 }
 
 <section class="hero">
-  <h1>Stamp</h1>
-  <p>Strangers pay a small, refundable stamp to reach you. Reply within 6 days and you keep it. Ignore it and they're never charged.</p>
+  <p class="eyebrow">A paid inbox for busy people</p>
+  <h1>Strangers pay a stamp to reach you. They're only charged if you reply.</h1>
+  <p class="lead">
+    Set your price and share your page. Reply within @window and you keep the stamp.
+    Ignore a message and the hold on the sender's card is released, so they pay nothing.
+  </p>
+  <div class="hero__actions">
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+      <a class="button" asp-page="/Inbox/Index">Go to your inbox</a>
+    }
+    else
+    {
+      <a class="button" asp-page="/Auth/Login">Create your page</a>
+    }
+  </div>
+</section>
+
+<section class="steps" aria-label="How it works">
+  <div class="step">
+    <span class="step__number">1</span>
+    <h2>Set a price</h2>
+    <p>Anything from $2 to $500 per message.</p>
+  </div>
+  <div class="step">
+    <span class="step__number">2</span>
+    <h2>Share your link</h2>
+    <p>Put it in your bio. Senders write a message and authorize the stamp on their card.</p>
+  </div>
+  <div class="step">
+    <span class="step__number">3</span>
+    <h2>Reply to what matters</h2>
+    <p>Replying collects the stamp. Everything else expires after @window, free for the sender.</p>
+  </div>
 </section>

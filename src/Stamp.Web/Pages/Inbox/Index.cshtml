@@ -1,0 +1,77 @@
+@page
+@model Stamp.Web.Pages.Inbox.IndexModel
+@{
+    ViewData["Title"] = "Inbox";
+}
+
+<div class="page-header page-header--split">
+  <h1>Inbox</h1>
+  <nav class="tabs" aria-label="Inbox views">
+    <a asp-page="/Inbox/Index" class="tab @(Model.ShowingHistory ? "" : "is-active")">Pending</a>
+    <a asp-page="/Inbox/Index" asp-route-view="history" class="tab @(Model.ShowingHistory ? "is-active" : "")">History</a>
+  </nav>
+</div>
+
+@if (!Model.Receiver.IsAcceptingStamps)
+{
+  <div class="notice">
+    <strong>Your page isn't accepting stamps yet.</strong>
+    @if (Model.Receiver.Handle is null)
+    {
+      <span><a asp-page="/Settings/Index">Pick a handle and price</a>, then set up payouts.</span>
+    }
+    else
+    {
+      <span><a asp-page="/Payouts/Index">Set up payouts</a> to open <a href="/@Model.Receiver.Handle">your page</a>.</span>
+    }
+  </div>
+}
+
+@if (Model.Items.Count == 0)
+{
+  <div class="empty">
+    @if (Model.ShowingHistory)
+    {
+      <p>Stamps you reply to, decline or let expire will show up here.</p>
+    }
+    else
+    {
+      <p>No stamps waiting for you.</p>
+      @if (Model.Receiver.Handle is not null)
+      {
+        <p class="muted">Share <a href="/@Model.Receiver.Handle">your page</a> so people can reach you.</p>
+      }
+    }
+  </div>
+}
+else
+{
+  <ul class="inbox-list">
+    @foreach (var item in Model.Items)
+    {
+      var uncollected = item.Status is MessageStatus.Declined or MessageStatus.Expired
+                        || item is { Status: MessageStatus.Replied, PaymentStatus: PaymentStatus.Canceled };
+      var chipTitle = item.Status == MessageStatus.Pending ? "Yours when you reply" : uncollected ? "Not collected" : "Earned";
+      <li>
+        <a class="inbox-item" asp-page="/Inbox/Message" asp-route-id="@item.Id">
+          <div class="inbox-item__main">
+            <span class="inbox-item__sender">@item.SenderName</span>
+            <span class="inbox-item__subject">@item.Subject</span>
+            <span class="inbox-item__preview">@item.Preview</span>
+          </div>
+          <div class="inbox-item__meta">
+            <span class="stamp-chip @(uncollected ? "stamp-chip--void" : "")" title="@chipTitle">@Money.Format(item.EarningsCents, item.Currency)</span>
+            @if (item.Status == MessageStatus.Pending && item.ExpiresAt is { } expiresAt)
+            {
+              <time class="countdown @(Countdown.IsUrgent(expiresAt, Model.Now) ? "is-urgent" : "")" datetime="@Countdown.Iso(expiresAt)" data-countdown>@Countdown.Format(expiresAt, Model.Now)</time>
+            }
+            else
+            {
+              <partial name="_StatusBadge" model="(item.Status, item.PaymentStatus)" />
+            }
+          </div>
+        </a>
+      </li>
+    }
+  </ul>
+}

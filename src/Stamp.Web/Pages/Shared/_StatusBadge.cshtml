@@ -1,0 +1,14 @@
+@model (MessageStatus Status, PaymentStatus Payment)
+@{
+    var (label, css) = Model switch
+    {
+        (MessageStatus.Replied, PaymentStatus.Captured) => ("Replied · paid", "replied"),
+        (MessageStatus.Replied, PaymentStatus.Canceled) => ("Replied · unpaid", "unpaid"),
+        (MessageStatus.Replied, _) => ("Replied · collecting", "replied"),
+        (MessageStatus.Declined, _) => ("Declined", "declined"),
+        (MessageStatus.Expired, _) => ("Expired", "expired"),
+        (MessageStatus.Pending, _) => ("Pending", "pending"),
+        _ => (Model.Status.ToString(), "expired"),
+    };
+}
+<span class="badge badge--@css">@label</span>

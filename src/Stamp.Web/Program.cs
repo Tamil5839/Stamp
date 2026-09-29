@@ -1,22 +1,32 @@
-var builder = WebApplication.CreateBuilder(args);
+using Microsoft.Extensions.Options;
+using Stamp.Application;
+using Stamp.Infrastructure;
+using Stamp.Infrastructure.Persistence;
+using Stamp.Web.Infrastructure;
 
-builder.Services.AddRazorPages();
+// `dotnet run -- expire-stamps` and `dotnet run -- migrate` run once and exit (see Cli).
+var command = Cli.CommandIn(args);
+
+var builder = WebApplication.CreateBuilder(command is null ? args : args[1..]);
+
+builder.Services.AddStampWeb(builder.Configuration, builder.Environment);
+builder.Services.AddStampApplication();
+builder.Services.AddStampInfrastructure(builder.Configuration, builder.Environment);
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
+if (command is not null)
 {
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
+    return await Cli.RunAsync(app, command);
 }
 
-app.UseHttpsRedirection();
-app.UseRouting();
-app.UseAuthorization();
+if (app.Services.GetRequiredService<IOptions<DatabaseOptions>>().Value.AutoMigrate)
+{
+    await app.Services.MigrateStampDatabaseAsync();
+}
 
-app.MapStaticAssets();
-app.MapRazorPages().WithStaticAssets();
-
-app.Run();
+app.UseStampWeb();
+await app.RunAsync();
+return 0;
 
 public partial class Program;

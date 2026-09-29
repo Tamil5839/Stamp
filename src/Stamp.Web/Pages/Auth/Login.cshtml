@@ -1,0 +1,28 @@
+@page
+@model Stamp.Web.Pages.Auth.LoginModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<div class="card card--narrow">
+  @if (Model.Sent)
+  {
+    <h1>Check your email</h1>
+    <p>We sent a sign-in link to <strong>@Model.Email</strong>. It works once and expires in @Model.LinkLifetime.</p>
+    <p class="muted">Nothing there? Check your spam folder, or <a asp-page="/Auth/Login">send another link</a>.</p>
+  }
+  else
+  {
+    <h1>Sign in to Stamp</h1>
+    <p class="muted">No password needed. We'll email you a sign-in link, and if you're new, the same link creates your account.</p>
+
+    <form method="post" class="form">
+      <div class="field">
+        <label asp-for="Email">Email</label>
+        <input asp-for="Email" type="email" autocomplete="email" required autofocus />
+        <span asp-validation-for="Email" class="field__error"></span>
+      </div>
+      <button type="submit" class="button button--block">Email me a sign-in link</button>
+    </form>
+  }
+</div>

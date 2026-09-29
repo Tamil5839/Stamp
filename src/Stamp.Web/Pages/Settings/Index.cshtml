@@ -1,0 +1,76 @@
+@page
+@model Stamp.Web.Pages.Settings.IndexModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="page-header">
+  <h1>@(Model.Welcome ? "Welcome to Stamp" : "Your page")</h1>
+  @if (Model.Current.Handle is not null)
+  {
+    <p class="muted">Your public page is <a href="/@Model.Current.Handle">@Model.PublicUrl</a></p>
+  }
+  else
+  {
+    <p class="muted">Pick a handle and a price to create your public page.</p>
+  }
+</div>
+
+@if (Model.Current.Handle is not null && !Model.Current.PayoutsEnabled)
+{
+  <div class="notice">Your page won't accept stamps until you <a asp-page="/Payouts/Index">set up payouts</a>.</div>
+}
+
+<form method="post" class="card form">
+  <div asp-validation-summary="ModelOnly" class="form__errors"></div>
+
+  <div class="field">
+    <label asp-for="Input.Handle">Handle</label>
+    <div class="input-prefix">
+      <span>@Model.PublicUrlPrefix</span>
+      <input asp-for="Input.Handle" autocomplete="off" autocapitalize="none" spellcheck="false" required />
+    </div>
+    <span class="field__hint">3–30 characters: letters, numbers and underscores.</span>
+    <span asp-validation-for="Input.Handle" class="field__error"></span>
+  </div>
+
+  <div class="field">
+    <label asp-for="Input.DisplayName">Display name</label>
+    <input asp-for="Input.DisplayName" autocomplete="name" required />
+    <span asp-validation-for="Input.DisplayName" class="field__error"></span>
+  </div>
+
+  <div class="field">
+    <label asp-for="Input.Bio">Short bio</label>
+    <textarea asp-for="Input.Bio" rows="3" maxlength="@Stamp.Domain.Receivers.Receiver.MaxBioLength" data-counter></textarea>
+    <span class="field__hint" data-counter-for="Input_Bio"></span>
+    <span asp-validation-for="Input.Bio" class="field__error"></span>
+  </div>
+
+  <div class="field">
+    <label asp-for="Input.PhotoUrl">Photo URL <span class="optional">optional</span></label>
+    <input asp-for="Input.PhotoUrl" type="url" placeholder="https://" />
+    <span asp-validation-for="Input.PhotoUrl" class="field__error"></span>
+  </div>
+
+  <div class="field">
+    <label asp-for="Input.PriceDollars">Stamp price</label>
+    <div class="input-prefix input-prefix--narrow">
+      <span>$</span>
+      <input asp-for="Input.PriceDollars" type="number" min="2" max="500" step="0.01" inputmode="decimal" required />
+    </div>
+    <span class="field__hint">Between $2 and $500. You receive it minus Stamp's @Model.FeePercent% fee when you reply.</span>
+    <span asp-validation-for="Input.PriceDollars" class="field__error"></span>
+  </div>
+
+  <label class="checkbox">
+    <input asp-for="Input.DonateToCharity" />
+    <span>Send my earnings to charity <span class="optional">coming soon: we'll save your preference</span></span>
+  </label>
+
+  <div class="actions">
+    <button type="submit" class="button">Save</button>
+  </div>
+</form>
+
+<p class="muted"><a asp-page="/Settings/Blocked">Blocked senders</a></p>

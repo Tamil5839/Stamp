@@ -1,0 +1,105 @@
+@page "/inbox/{id:guid}"
+@model Stamp.Web.Pages.Inbox.MessageModel
+@{
+    var message = Model.Message;
+    ViewData["Title"] = message.Subject;
+    var price = Money.Format(message.AmountCents, message.Currency);
+    var earnings = Money.Format(message.EarningsCents, message.Currency);
+}
+
+<a asp-page="/Inbox/Index" class="back-link">← Inbox</a>
+
+<article class="card message">
+  <header class="message__header">
+    <div>
+      <h1 class="message__subject">@message.Subject</h1>
+      <p class="muted">From <strong>@message.SenderName</strong> &lt;@message.SenderEmail&gt; · @TimeText.Moment(message.CreatedAt)</p>
+    </div>
+    <div class="message__stamp">
+      <span class="stamp-chip stamp-chip--large">@price</span>
+      @if (message.Status == MessageStatus.Pending && message.ExpiresAt is { } expiresAt)
+      {
+        <time class="countdown @(Countdown.IsUrgent(expiresAt, Model.Now) ? "is-urgent" : "")" datetime="@Countdown.Iso(expiresAt)" data-countdown>@Countdown.Format(expiresAt, Model.Now)</time>
+      }
+      else
+      {
+        <partial name="_StatusBadge" model="(message.Status, message.PaymentStatus)" />
+      }
+    </div>
+  </header>
+  <div class="message__body">@message.Body</div>
+</article>
+
+@if (message.Status == MessageStatus.Replied)
+{
+  <section class="card reply">
+    <h2>Your reply</h2>
+    <div class="message__body">@message.ReplyBody</div>
+    <p class="fine-print">
+      @switch (message.PaymentStatus)
+      {
+        case PaymentStatus.Captured:
+          @:Sent @(message.ResolvedAt is { } at ? TimeText.Moment(at) : ""). You earned @earnings.
+          break;
+        case PaymentStatus.Canceled:
+          @:The sender's card hold was released before it could be collected, so this stamp went unpaid.
+          break;
+        default:
+          @:We're collecting the stamp; it'll show as paid shortly.
+          break;
+      }
+    </p>
+  </section>
+}
+else if (message.CanReply)
+{
+  <form method="post" asp-page-handler="Reply" class="card form reply">
+    <h2>Reply</h2>
+    <p class="muted">Your reply is emailed to @message.SenderName (your address stays private) and collects the stamp: you earn @earnings.</p>
+    <div class="field">
+      <label asp-for="Reply" class="visually-hidden">Your reply</label>
+      <textarea asp-for="Reply" rows="8" minlength="@StampedMessage.MinReplyLength" maxlength="@StampedMessage.MaxReplyLength" data-counter data-min="@StampedMessage.MinReplyLength" required></textarea>
+      <span class="field__hint" data-counter-for="Reply"></span>
+      <span asp-validation-for="Reply" class="field__error"></span>
+    </div>
+    <div class="actions">
+      <button type="submit" class="button">Send reply and collect @price</button>
+    </div>
+  </form>
+}
+else
+{
+  <p class="notice">
+    @switch (message.Status)
+    {
+      case MessageStatus.Declined:
+        @:You declined this message. The sender wasn't charged.
+        break;
+      case MessageStatus.Expired:
+        @:This stamp expired without a reply. The sender wasn't charged.
+        break;
+      default:
+        @:The reply window has closed. The sender won't be charged.
+        break;
+    }
+  </p>
+}
+
+<div class="secondary-actions">
+  @if (message.Status == MessageStatus.Pending)
+  {
+    <form method="post" asp-page-handler="Decline">
+      <button type="submit" class="button button--ghost" data-confirm="Decline this message? @message.SenderName won't be charged.">Decline</button>
+    </form>
+  }
+  @if (!message.SenderBlocked)
+  {
+    <form method="post" asp-page-handler="Block">
+      <button type="submit" class="button button--ghost" data-confirm="Block @message.SenderEmail? They won't be able to send you stamps.">Block sender</button>
+    </form>
+  }
+  else
+  {
+    <span class="muted">@message.SenderEmail is blocked. <a asp-page="/Settings/Blocked">Manage</a></span>
+  }
+</div>

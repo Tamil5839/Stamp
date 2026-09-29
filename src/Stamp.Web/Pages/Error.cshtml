@@ -1,0 +1,11 @@
+@page
+@model Stamp.Web.Pages.ErrorModel
+@{
+    ViewData["Title"] = Model.Heading;
+}
+
+<div class="card card--narrow center">
+  <h1>@Model.Heading</h1>
+  <p>@Model.Description</p>
+  <a href="/" class="button">Back to Stamp</a>
+</div>
