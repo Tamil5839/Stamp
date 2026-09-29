@@ -87,6 +87,18 @@ public sealed class StampedMessageTests
     }
 
     [Fact]
+    public void Subjects_are_single_line_and_windows_newlines_count_once()
+    {
+        var body = string.Join("\r\n", Enumerable.Repeat(new string('x', 99), 15)); // 1,485 chars + 14 CRLFs
+
+        var message = StampedMessage.Create(Guid.NewGuid(), "Ada", "ada@example.com", "Hello\r\nBcc: x@y.z", body, 500, 50, "usd", T0);
+
+        Assert.Equal("Hello Bcc: x@y.z", message.Subject);
+        Assert.Equal(1_499, message.Body.Length);
+        Assert.DoesNotContain('\r', message.Body);
+    }
+
+    [Fact]
     public void Attaching_a_payment_marks_it_created()
     {
         var message = NewDraft();

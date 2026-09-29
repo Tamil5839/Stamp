@@ -69,7 +69,7 @@ public sealed class Receiver
     {
         var normalizedHandle = HandleRules.NormalizeValid(handle);
 
-        var trimmedName = displayName?.Trim() ?? string.Empty;
+        var trimmedName = TextRules.SingleLine(displayName);
         if (trimmedName.Length is 0 or > MaxDisplayNameLength)
         {
             throw new DomainException(
@@ -78,7 +78,7 @@ public sealed class Receiver
                 nameof(DisplayName));
         }
 
-        var trimmedBio = bio?.Trim() ?? string.Empty;
+        var trimmedBio = TextRules.MultiLine(bio);
         if (trimmedBio.Length > MaxBioLength)
         {
             throw new DomainException(

@@ -82,10 +82,10 @@ public sealed class StampedMessage
         string currency,
         DateTimeOffset now)
     {
-        var name = Required(senderName, MaxSenderNameLength, DomainErrorCodes.InvalidSenderName, "Your name", nameof(SenderName));
+        var name = Required(TextRules.SingleLine(senderName), MaxSenderNameLength, DomainErrorCodes.InvalidSenderName, "Your name", nameof(SenderName));
         var email = EmailAddress.NormalizeValid(senderEmail, nameof(SenderEmail));
-        var trimmedSubject = Required(subject, MaxSubjectLength, DomainErrorCodes.InvalidSubject, "Subject", nameof(Subject));
-        var trimmedBody = Required(body, MaxBodyLength, DomainErrorCodes.InvalidBody, "Message", nameof(Body));
+        var trimmedSubject = Required(TextRules.SingleLine(subject), MaxSubjectLength, DomainErrorCodes.InvalidSubject, "Subject", nameof(Subject));
+        var trimmedBody = Required(TextRules.MultiLine(body), MaxBodyLength, DomainErrorCodes.InvalidBody, "Message", nameof(Body));
 
         StampPricing.EnsureValidPrice(amountCents);
         ArgumentOutOfRangeException.ThrowIfNegative(platformFeeCents);
@@ -164,7 +164,7 @@ public sealed class StampedMessage
                 DomainErrorCodes.ReplyWindowClosed, "The reply window for this stamp has closed.", nameof(ReplyBody));
         }
 
-        var trimmed = replyBody?.Trim() ?? string.Empty;
+        var trimmed = TextRules.MultiLine(replyBody);
         if (trimmed.Length < MinReplyLength)
         {
             throw new DomainException(
@@ -289,14 +289,13 @@ public sealed class StampedMessage
         throw new DomainException(errorCode, reason);
     }
 
-    private static string Required(string? value, int maxLength, string errorCode, string label, string target)
+    private static string Required(string normalized, int maxLength, string errorCode, string label, string target)
     {
-        var trimmed = value?.Trim() ?? string.Empty;
-        if (trimmed.Length == 0 || trimmed.Length > maxLength)
+        if (normalized.Length == 0 || normalized.Length > maxLength)
         {
             throw new DomainException(errorCode, Invariant($"{label} is required and can be up to {maxLength:N0} characters."), target);
         }
 
-        return trimmed;
+        return normalized;
     }
 }

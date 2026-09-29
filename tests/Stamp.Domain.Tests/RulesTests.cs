@@ -114,3 +114,22 @@ public sealed class MoneyTests
         Assert.Equal(expected, Money.Format(amount, currency));
     }
 }
+
+public sealed class TextRulesTests
+{
+    [Theory]
+    [InlineData("  Quick\r\nquestion \t here ", "Quick question here")]
+    [InlineData("Bcc: evil@example.com\nSubject", "Bcc: evil@example.com Subject")]
+    [InlineData("zero\u0000width\u0007", "zerowidth")]
+    [InlineData(null, "")]
+    public void Single_line_collapses_whitespace_and_drops_control_characters(string? input, string expected)
+    {
+        Assert.Equal(expected, TextRules.SingleLine(input));
+    }
+
+    [Fact]
+    public void Multi_line_normalizes_line_endings_and_keeps_paragraphs()
+    {
+        Assert.Equal("Hi,\n\nThanks!\tBye", TextRules.MultiLine("  Hi,\r\n\r\nThanks!\tBye\u0000  "));
+    }
+}
