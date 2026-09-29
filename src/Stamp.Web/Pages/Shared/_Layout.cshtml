@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>@(ViewData["Title"] is string title ? $"{title} · Stamp" : "Stamp")</title>
+  <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+  @await RenderSectionAsync("Head", required: false)
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="/">Stamp</a>
+  </header>
+  <main class="container">
+    @RenderBody()
+  </main>
+  @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

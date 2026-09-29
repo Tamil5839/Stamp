@@ -1,0 +1,13 @@
+:root {
+  --ink: #1d1b16;
+  --paper: #fbf8f1;
+  --accent: #b4441f;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+body { margin: 0; }
+.site-header { padding: 1rem 1.5rem; border-bottom: 1px solid #e7e0cf; }
+.brand { font-weight: 700; color: var(--accent); text-decoration: none; }
+.container { max-width: 44rem; margin: 0 auto; padding: 2rem 1.5rem; }
