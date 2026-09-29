@@ -21,12 +21,12 @@ public sealed class TestApp : IAsyncDisposable
 {
     public static readonly DateTimeOffset Start = new(2026, 10, 1, 12, 0, 0, TimeSpan.Zero);
 
-    private readonly SqliteConnection _connection;
+    private readonly string _databasePath;
     private readonly ServiceProvider _services;
 
-    private TestApp(SqliteConnection connection, ServiceProvider services, FakeTimeProvider time, FakePaymentProvider payments)
+    private TestApp(string databasePath, ServiceProvider services, FakeTimeProvider time, FakePaymentProvider payments)
     {
-        _connection = connection;
+        _databasePath = databasePath;
         _services = services;
         Time = time;
         Payments = payments;
@@ -36,12 +36,16 @@ public sealed class TestApp : IAsyncDisposable
 
     public FakePaymentProvider Payments { get; }
 
+    public IServiceProvider Services => _services;
+
     public static CancellationToken Ct => TestContext.Current.CancellationToken;
 
     public static async Task<TestApp> CreateAsync(Action<StampOptions>? configureStamps = null, Action<AuthOptions>? configureAuth = null)
     {
-        var connection = new SqliteConnection("Data Source=:memory:");
-        await connection.OpenAsync();
+        // A throwaway file rather than a shared in-memory connection, so background work (the hosted
+        // expiry job) and the test can use the database at the same time, each on its own connection.
+        var databasePath = Path.Combine(Path.GetTempPath(), $"stamp-test-{Guid.NewGuid():N}.db");
+        var connectionString = new SqliteConnectionStringBuilder { DataSource = databasePath, Pooling = false }.ToString();
 
         var time = new FakeTimeProvider(Start);
         var payments = new FakePaymentProvider();
@@ -51,7 +55,7 @@ public sealed class TestApp : IAsyncDisposable
         services.AddSingleton<TimeProvider>(time);
         services.AddSingleton<IPaymentProvider>(payments);
         services.AddSingleton<IAppUrls, TestUrls>();
-        services.AddDbContext<SqliteStampDbContext>(options => options.UseSqlite(connection));
+        services.AddDbContext<SqliteStampDbContext>(options => options.UseSqlite(connectionString));
         services.AddScoped<StampDbContext>(sp => sp.GetRequiredService<SqliteStampDbContext>());
         services.AddScoped<IStampDbContext>(sp => sp.GetRequiredService<StampDbContext>());
         services.Configure<StampOptions>(options => configureStamps?.Invoke(options));
@@ -64,7 +68,7 @@ public sealed class TestApp : IAsyncDisposable
             await scope.ServiceProvider.GetRequiredService<StampDbContext>().Database.MigrateAsync();
         }
 
-        return new TestApp(connection, provider, time, payments);
+        return new TestApp(databasePath, provider, time, payments);
     }
 
     public async Task<T> Run<TService, T>(Func<TService, Task<T>> action)
@@ -140,7 +144,10 @@ public sealed class TestApp : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _connection.DisposeAsync();
+        foreach (var suffix in new[] { string.Empty, "-wal", "-shm", "-journal" })
+        {
+            File.Delete(_databasePath + suffix);
+        }
     }
 }
 
